@@ -8,6 +8,11 @@ from strategies.tema_adx_cmo import check_signal
 from config import DEPOSIT, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TIMEFRAME
 from core.telegram_notify import send_telegram_message
 
+# --- Добавлено для работы IndicatorCache и BybitRestClient ---
+from core.bybit_rest import BybitRestClient
+from core.indicator_cache import IndicatorCache
+# -------------------------------------------------------------
+
 def get_all_bybit_futures_symbols(trader):
     """
     Получить все доступные фьючерсные пары на Bybit через bybit_trader
@@ -29,6 +34,12 @@ def main():
         print("Не удалось получить список торговых пар. Завершение работы.")
         return
 
+    # --- Инициализация BybitRestClient и IndicatorCache ---
+    rest_client = BybitRestClient(trader.session)
+    indicator_cache = IndicatorCache(symbols, rest_client, TIMEFRAME)
+    indicator_cache.initialize()
+    # ------------------------------------------------------
+
     # Запуск WebSocket клиента для свечей по всем парам
     ws_candles = CandlesWS(symbols, interval=TIMEFRAME)
 
@@ -43,6 +54,15 @@ def main():
             df = pd.DataFrame(candles)
             if not all(col in df for col in ['close', 'high', 'low']):
                 continue
+
+            # --- Обновление кэша индикаторов при приходе новой свечи ---
+            indicator_cache.update(symbol, df.iloc[-1])
+            # Теперь при необходимости можно получать индикаторные значения:
+            # indicators = indicator_cache.cache.get(symbol, {})
+            # tema = indicators.get("tema")
+            # adx = indicators.get("adx")
+            # cmo = indicators.get("cmo")
+            # ----------------------------------------------------------
 
             signal = check_signal(df)
             if signal in ["long", "short"]:
