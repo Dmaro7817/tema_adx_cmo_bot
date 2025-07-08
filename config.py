@@ -1,3 +1,15 @@
+
+# Извлечение токенов и chat_id из переменных окружения
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+# Параметры Bybit также подтягиваются из env (используются в bybit_trader.py)
+BYBIT_API_KEY = os.getenv("BYBIT_API_KEY", "")
+BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET", "")
+
+
+
+
 # Общий таймфрейм для всех модулей
 TIMEFRAME = "1h"
 
