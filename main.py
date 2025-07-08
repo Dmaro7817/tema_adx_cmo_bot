@@ -1,29 +1,46 @@
+import os
 import pandas as pd
 import time
 
 from core.bybit_trader import BybitTrader
 from core.ws_candles import CandlesWS
 from strategies.tema_adx_cmo import check_signal
-from configs.config import SYMBOLS, DEPOSIT, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TIMEFRAME
+from configs.config import DEPOSIT, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TIMEFRAME
 from core.telegram_notify import send_telegram_message
+
+def get_all_bybit_futures_symbols(trader):
+    """
+    Получить все доступные фьючерсные пары на Bybit через bybit_trader
+    """
+    try:
+        info = trader.session.get_instruments_info(category=trader.category)
+        return [item['symbol'] for item in info['result']['list']]
+    except Exception as e:
+        print(f"Ошибка получения списка контрактов: {e}")
+        return []
 
 def main():
     # Инициализация трейдера
     trader = BybitTrader(deposit=DEPOSIT)
 
-    # Запуск WebSocket клиента для свечей
-    ws_candles = CandlesWS(SYMBOLS, interval=TIMEFRAME)
+    # Получение всех доступных фьючерсных пар с биржи
+    symbols = get_all_bybit_futures_symbols(trader)
+    if not symbols:
+        print("Не удалось получить список торговых пар. Завершение работы.")
+        return
 
-    print("Бот запущен.")
+    # Запуск WebSocket клиента для свечей по всем парам
+    ws_candles = CandlesWS(symbols, interval=TIMEFRAME)
+
+    print("Бот запущен. Следит за всеми фьючерсными парами на Bybit.")
 
     while True:
-        for symbol in SYMBOLS:
+        for symbol in symbols:
             candles = ws_candles.get_latest_candles(symbol, n=100)
             if len(candles) < 50:
                 continue  # Не хватает данных для индикаторов
 
             df = pd.DataFrame(candles)
-            # Требуемые колонки: 'close', 'high', 'low'
             if not all(col in df for col in ['close', 'high', 'low']):
                 continue
 
