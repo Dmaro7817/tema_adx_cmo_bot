@@ -3,3 +3,6 @@ TIMEFRAME = "1h"
 
 # Периоды для трёх TEMA линий (можно менять)
 TEMA_PERIODS = [8, 14, 21]
+
+# Периоды для ADX
+ADX_PERIOD = 14
