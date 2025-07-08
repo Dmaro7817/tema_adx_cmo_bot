@@ -1,6 +1,7 @@
 from indicators.tema import calculate_tema_lines
 from indicators.adx import calculate_adx
 from indicators.cmo import calculate_cmo
+from core.bybit_rest import BybitRestClient  # <--- Подключение BybitRestClient
 
 class IndicatorCache:
     def __init__(self, symbols, rest_client, timeframe):
