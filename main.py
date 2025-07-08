@@ -5,7 +5,7 @@ import time
 from core.bybit_trader import BybitTrader
 from core.ws_candles import CandlesWS
 from strategies.tema_adx_cmo import check_signal
-from configs.config import DEPOSIT, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TIMEFRAME
+from config import DEPOSIT, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TIMEFRAME
 from core.telegram_notify import send_telegram_message
 
 def get_all_bybit_futures_symbols(trader):
