@@ -9,6 +9,9 @@ USE_TRAILING_STOP = True  # Включить трейлинг стоп
 TRAILING_STOP_ACTIVATION_PERCENT = 2.0  # Процент движения в прибыль для активации трейлинг-стопа
 TRAILING_STOP_PERCENT = 3.5  # Шаг трейлинг-стопа в %
 
+LEVERAGE = 20
+TRADE_AMOUNT = 1.0   # сумма в $
+
 #-----ИНДИКАТОРЫ-----
 # Периоды для трёх TEMA линий (можно менять)
 TEMA_PERIODS = [8, 14, 21]
