@@ -1,0 +1,29 @@
+from indicators.tema import calculate_tema_lines
+from indicators.adx import calculate_adx
+from indicators.cmo import calculate_cmo
+
+class IndicatorCache:
+    def __init__(self, symbols, rest_client, timeframe):
+        self.cache = {}  # { symbol: {"df": df, "tema": ..., "adx": ..., "cmo": ...} }
+        self.symbols = symbols
+        self.rest_client = rest_client
+        self.timeframe = timeframe
+
+    def initialize(self):
+        for symbol in self.symbols:
+            df = self.rest_client.get_historical_candles(symbol, self.timeframe, limit=100)  # максимально быстро REST-ом
+            if df is not None and len(df) > 0:
+                tema = calculate_tema_lines(df['close'])
+                adx = calculate_adx(df)
+                cmo = calculate_cmo(df['close'])
+                self.cache[symbol] = {"df": df, "tema": tema, "adx": adx, "cmo": cmo}
+
+    def update(self, symbol, new_candle):
+        if symbol in self.cache:
+            df = self.cache[symbol]["df"]
+            df = df.append(new_candle, ignore_index=True)
+            # Обновляем только последние значения индикаторов
+            tema = calculate_tema_lines(df['close'])
+            adx = calculate_adx(df)
+            cmo = calculate_cmo(df['close'])
+            self.cache[symbol] = {"df": df, "tema": tema, "adx": adx, "cmo": cmo}
