@@ -34,6 +34,9 @@ ADX_PERIOD = 14
 # Периоды для Chande Momentum Oscillator (CMO)
 CMO_PERIOD = 14
 
+# Угол откланения EMA
+EMA_WINDOW = 100        # окно (период) для расчёта EMA (например, 20 свечей)
+SLOPE_PERIOD = 30      # период для расчёта наклона EMA (например, последние 30 точек)
 
 
 
