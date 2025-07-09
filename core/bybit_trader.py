@@ -11,8 +11,8 @@ class BybitTrader:
         self.deposit = deposit
         self.open_trades = []
         self.session = HTTP(
-            api_key=os.getenv("BYBIT_API_KEY"),
-            api_secret=os.getenv("BYBIT_API_SECRET"),
+            api_key=config.BYBIT_API_KEY,
+            api_secret=config.BYBIT_API_SECRET,
             testnet=False
         )
         self.category = "linear"
