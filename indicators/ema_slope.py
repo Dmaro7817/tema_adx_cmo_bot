@@ -1,34 +1,34 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression
 import pandas as pd
-from config import EMA_WINDOW, SLOPE_PERIOD, EMA_LIGHT, TIMEFRAME
+import talib
 
-def calculate_ema_slope(
-    prices: pd.Series,
-    ema_window: int = EMA_WINDOW,
-    slope_period: int = SLOPE_PERIOD,
-    ema_light: int = EMA_LIGHT
-):
+def calculate_ema_angle(close_prices, ema_period=20, slope_period=30):
     """
-    Вычисляет наклон линии EMA за последние slope_period.
-
-    :param prices: pd.Series исторических цен (например, закрытия)
-    :param ema_window: окно EMA
-    :param slope_period: период для расчёта наклона
-    :param ema_light: окно для дополнительной "лёгкой" EMA
-    :return: (slope, ema_series, ema_light_series)
+    close_prices: pandas.Series или список цен закрытия
+    ema_period: период скользящей средней
+    slope_period: период для расчёта угла (разница между EMA сейчас и N свечей назад)
     """
-    if len(prices) < max(ema_window, ema_light) + slope_period:
-        raise ValueError(f"Need at least {max(ema_window, ema_light) + slope_period} data points")
+    if not isinstance(close_prices, pd.Series):
+        close_prices = pd.Series(close_prices)
 
-    ema_series = prices.ewm(span=ema_window, adjust=False).mean()
-    ema_light_series = prices.ewm(span=ema_light, adjust=False).mean()
+    # Вычисляем EMA
+    ema = talib.EMA(close_prices, timeperiod=ema_period)
 
-    ema_values = ema_series.dropna().iloc[-slope_period:].values
-    X = np.arange(slope_period).reshape(-1, 1)
+    # Разница (slope) между текущей EMA и EMA N свечей назад
+    delta = ema - ema.shift(slope_period)
 
-    model = LinearRegression()
-    model.fit(X, ema_values)
-    slope = model.coef_[0]
+    # Для нормализации по "горизонтали" используем slope_period (по оси X)
+    # Угол (в радианах): arctan(ΔEMA/ΔX)
+    angle_rad = np.arctan(delta / slope_period)
 
-    return slope, ema_series, ema_light_series
+    # Переводим в градусы
+    angle_deg = np.degrees(angle_rad)
+
+    return angle_deg
+
+# Пример использования:
+if __name__ == "__main__":
+    # Примерные цены, замените на свои данные
+    closes = [100 + np.sin(x/10) for x in range(100)]
+    angle = calculate_ema_angle(closes, ema_period=20, slope_period=30)
+    print(angle.tail(10))  # последние 10 значений угла EMA
