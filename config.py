@@ -1,11 +1,12 @@
+import os
+from dotenv import load_dotenv
 
-# Извлечение токенов и chat_id из переменных окружения
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+load_dotenv()  # Загружает переменные из .env, если он есть
 
-# Параметры Bybit также подтягиваются из env (используются в bybit_trader.py)
 BYBIT_API_KEY = os.getenv("BYBIT_API_KEY", "")
 BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET", "")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 
 
@@ -21,8 +22,9 @@ USE_TRAILING_STOP = True  # Включить трейлинг стоп
 TRAILING_STOP_ACTIVATION_PERCENT = 2.0  # Процент движения в прибыль для активации трейлинг-стопа
 TRAILING_STOP_PERCENT = 3.5  # Шаг трейлинг-стопа в %
 
-LEVERAGE = 20
-TRADE_AMOUNT = 1.0   # сумма в $
+LEVERAGE = 1
+TRADE_AMOUNT = 6.0   # сумма в $
+DEPOSIT = 100
 
 #-----ИНДИКАТОРЫ-----
 # Периоды для трёх TEMA линий (можно менять)
