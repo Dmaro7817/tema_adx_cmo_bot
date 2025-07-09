@@ -1,34 +1,30 @@
 import numpy as np
 import pandas as pd
-import talib
+from sklearn.linear_model import LinearRegression
+from config import EMA_WINDOW, SLOPE_PERIOD
 
-def calculate_ema_angle(close_prices, ema_period=20, slope_period=30):
+def calculate_ema_slope(
+    prices: pd.Series,
+    ema_window: int = EMA_WINDOW,
+    slope_period: int = SLOPE_PERIOD
+):
     """
-    close_prices: pandas.Series или список цен закрытия
-    ema_period: период скользящей средней
-    slope_period: период для расчёта угла (разница между EMA сейчас и N свечей назад)
+    Вычисляет наклон линии EMA (экспоненциальной скользящей средней) за последние slope_period точек.
+
+    :param prices: pd.Series исторических цен (например, закрытия)
+    :param ema_window: окно EMA
+    :param slope_period: период для расчёта наклона EMA
+    :return: (slope, ema_series)
     """
-    if not isinstance(close_prices, pd.Series):
-        close_prices = pd.Series(close_prices)
+    if len(prices) < ema_window + slope_period:
+        raise ValueError(f"Need at least {ema_window + slope_period} data points")
 
-    # Вычисляем EMA
-    ema = talib.EMA(close_prices, timeperiod=ema_period)
+    ema_series = prices.ewm(span=ema_window, adjust=False).mean()
+    ema_values = ema_series.dropna().iloc[-slope_period:].values
 
-    # Разница (slope) между текущей EMA и EMA N свечей назад
-    delta = ema - ema.shift(slope_period)
+    X = np.arange(slope_period).reshape(-1, 1)
+    model = LinearRegression()
+    model.fit(X, ema_values)
+    slope = model.coef_[0]
 
-    # Для нормализации по "горизонтали" используем slope_period (по оси X)
-    # Угол (в радианах): arctan(ΔEMA/ΔX)
-    angle_rad = np.arctan(delta / slope_period)
-
-    # Переводим в градусы
-    angle_deg = np.degrees(angle_rad)
-
-    return angle_deg
-
-# Пример использования:
-if __name__ == "__main__":
-    # Примерные цены, замените на свои данные
-    closes = [100 + np.sin(x/10) for x in range(100)]
-    angle = calculate_ema_angle(closes, ema_period=20, slope_period=30)
-    print(angle.tail(10))  # последние 10 значений угла EMA
+    return slope, ema_series
