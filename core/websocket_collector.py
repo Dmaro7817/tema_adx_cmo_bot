@@ -3,6 +3,7 @@ import json
 import csv
 import asyncio
 import websockets
+from multiprocessing import Process, Event
 
 KLINE_CSV_PATH = "/root/my_emacross_bot/bybit_futures_data_multi_tf/klines"
 os.makedirs(KLINE_CSV_PATH, exist_ok=True)
@@ -28,10 +29,10 @@ def save_kline_snapshot(symbol, kline):
     except Exception as e:
         print(f"[WS] Ошибка записи свечи в файл для {symbol}: {e}")
 
-async def kline_ws_worker_multi_async(symbols, interval="15"):
+async def kline_ws_worker_multi_async(symbols, interval="15", stop_event=None):
     ws_url = "wss://stream.bybit.com/v5/public/linear"
     blacklist = set()
-    while True:
+    while not (stop_event and stop_event.is_set()):
         sub_symbols = [s for s in symbols if s not in blacklist]
         if not sub_symbols:
             print("[WS] Нет валидных пар для подписки, поток остановлен.")
@@ -43,9 +44,9 @@ async def kline_ws_worker_multi_async(symbols, interval="15"):
                 await ws.send(sub_msg)
                 print(f"[WS] Подключён к kline пар: {sub_symbols}")
 
-                while True:
+                while not (stop_event and stop_event.is_set()):
                     try:
-                        msg = await ws.recv()
+                        msg = await asyncio.wait_for(ws.recv(), timeout=15)
                         data = json.loads(msg)
                         # Обработка ошибок подписки
                         if "error" in data and "topic" in data:
@@ -71,9 +72,30 @@ async def kline_ws_worker_multi_async(symbols, interval="15"):
                                     kline.get("turnover"),
                                 ])
                                 print(f"[WS] KLINE {symbol}: {[kline.get('start'), kline.get('open'), kline.get('high'), kline.get('low'), kline.get('close'), kline.get('volume'), kline.get('turnover')]}")
+                    except asyncio.TimeoutError:
+                        print("[WS] Timeout ожидания сообщения, переподключение...")
+                        break
                     except Exception as e:
                         print(f"[WS] WebSocket message error: {e}")
                         break
         except Exception as e:
             print(f"[WS] Ошибка подключения: {e}")
+        if stop_event and stop_event.is_set():
+            break
         await asyncio.sleep(1)
+
+def websocket_collector_process(symbols, interval="15", stop_event=None):
+    # Для совместимости с multiprocessing запускать event loop здесь
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(kline_ws_worker_multi_async(symbols, interval, stop_event))
+    finally:
+        loop.close()
+
+def start_websocket_collector_proc(symbols, interval="15"):
+    stop_event = Event()
+    p = Process(target=websocket_collector_process, args=(symbols, interval, stop_event))
+    p.start()
+    print(f"[WS-PROC] Процесс WebSocket collector запущен с pid={p.pid}")
+    return p, stop_event
