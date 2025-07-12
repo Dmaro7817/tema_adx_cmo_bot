@@ -33,7 +33,17 @@ def handle_private_message(msg):
             pass
 
 def websocket_private_process(api_key, api_secret, stop_event=None):
+    # Критично: загружаем переменные окружения именно здесь, чтобы видеть их и в дочернем процессе!
+    load_dotenv()
     print("[WS-PRIVATE] Приватный процесс стартовал", flush=True)
+    # Если ключи не переданы явно — пробуем взять из окружения (работает, если load_dotenv сработал)
+    if not api_key:
+        api_key = os.getenv("BYBIT_API_KEY")
+    if not api_secret:
+        api_secret = os.getenv("BYBIT_API_SECRET")
+    if not api_key or not api_secret:
+        print("[WS-PRIVATE-ERROR] Нет API KEY или SECRET для приватного WebSocket!", flush=True)
+        return
     print(f"[WS-PRIVATE] api_key: {api_key}, api_secret: {'*' * len(api_secret) if api_secret else None}", flush=True)
     ws_private = WebSocket(
         testnet=False,
@@ -53,10 +63,6 @@ def websocket_private_process(api_key, api_secret, stop_event=None):
         pass
 
 def start_websocket_private_proc(api_key=None, api_secret=None):
-    if not api_key:
-        api_key = os.getenv("BYBIT_API_KEY")
-    if not api_secret:
-        api_secret = os.getenv("BYBIT_API_SECRET")
     stop_event = Event()
     p = Process(target=websocket_private_process, args=(api_key, api_secret, stop_event))
     p.start()
